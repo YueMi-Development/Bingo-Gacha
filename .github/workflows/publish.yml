@@ -23,6 +23,23 @@ jobs:
       - name: Grant gradlew permission
         run: chmod +x gradlew
 
+      - name: Verify and Update Version
+        run: |
+          TAG_VERSION=$(echo "${{ github.ref_name }}" | sed 's/^v//')
+          GRADLE_VERSION=$(grep "^version=" gradle.properties | cut -d'=' -f2)
+          echo "Tag version: $TAG_VERSION"
+          echo "Gradle version: $GRADLE_VERSION"
+          if [ "$TAG_VERSION" != "$GRADLE_VERSION" ]; then
+            echo "Versions differ. Updating gradle.properties..."
+            sed -i "s/^version=.*/version=$TAG_VERSION/" gradle.properties
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git add gradle.properties
+            git commit -m "chore: update version to $TAG_VERSION"
+          else
+            echo "Versions match. No update needed."
+          fi
+
       - name: Publish to Yuemi Maven
         env:
           MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
