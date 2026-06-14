@@ -1,0 +1,40 @@
+config-version: 1
+title: "<light_purple>★ Mega Bingo Gacha ★"
+size: 5x5
+repeatable: false
+completion-type: FULL_CARD
+roll-cost:
+  type: item
+  material: EMERALD
+  amount: 2
+rewards:
+  - type: economy
+    amount: 5000.0
+  - type: command
+    command: "give %player% netherite_block 1"
+slots:
+  0: { material: STONE, name: "<gray>Slot 0" }
+  1: { material: COBBLESTONE, name: "<gray>Slot 1" }
+  2: { material: COBBLED_DEEPSLATE, name: "<gray>Slot 2" }
+  3: { material: CALCITE, name: "<gray>Slot 3" }
+  4: { material: TUFF, name: "<gray>Slot 4" }
+  5: { material: GRANITE, name: "<gray>Slot 5" }
+  6: { material: DIORITE, name: "<gray>Slot 6" }
+  7: { material: ANDESITE, name: "<gray>Slot 7" }
+  8: { material: OAK_PLANKS, name: "<gray>Slot 8" }
+  9: { material: SPRUCE_PLANKS, name: "<gray>Slot 9" }
+  10: { material: BIRCH_PLANKS, name: "<gray>Slot 10" }
+  11: { material: JUNGLE_PLANKS, name: "<gray>Slot 11" }
+  12: { material: ACACIA_PLANKS, name: "<gray>Slot 12" }
+  13: { material: DARK_OAK_PLANKS, name: "<gray>Slot 13" }
+  14: { material: MANGROVE_PLANKS, name: "<gray>Slot 14" }
+  15: { material: CHERRY_PLANKS, name: "<gray>Slot 15" }
+  16: { material: BAMBOO_PLANKS, name: "<gray>Slot 16" }
+  17: { material: CRIMSON_PLANKS, name: "<gray>Slot 17" }
+  18: { material: WARPED_PLANKS, name: "<gray>Slot 18" }
+  19: { material: OAK_LOG, name: "<gray>Slot 19" }
+  20: { material: SPRUCE_LOG, name: "<gray>Slot 20" }
+  21: { material: BIRCH_LOG, name: "<gray>Slot 21" }
+  22: { material: JUNGLE_LOG, name: "<gray>Slot 22" }
+  23: { material: ACACIA_LOG, name: "<gray>Slot 23" }
+  24: { material: DARK_OAK_LOG, name: "<gray>Slot 24" }

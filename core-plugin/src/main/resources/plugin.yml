@@ -1,4 +1,10 @@
-name: ExamplePlugin
+name: BingoGacha
 version: 1.0.0
-main: org.yuemi.Main
+main: org.yuemi.bingogacha.plugin.BingoGachaPlugin
 api-version: 1.21
+softdepend: [Vault, PlaceholderAPI]
+commands:
+  bingo:
+    description: Main command for Bingo Gacha
+    aliases: [bingogacha, bg]
+    permission: bingogacha.use

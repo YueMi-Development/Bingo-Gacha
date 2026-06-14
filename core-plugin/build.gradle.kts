@@ -1,6 +1,6 @@
 plugins {
     java
-    id("com.github.johnrengelman.shadow") version "8.1.1" // Shadow plugin
+    id("com.gradleup.shadow") version "8.3.0" // Shadow plugin
 }
 
 val pluginName: String by project
@@ -9,9 +9,19 @@ val developerId: String by project
 val developerName: String by project
 val pluginVersion: String = project.version.toString()
 
+repositories {
+    maven("https://jitpack.io")
+    maven("https://repo.extendedclip.com/releases/")
+}
+
 dependencies {
     implementation(project(":core-api"))
     compileOnly("io.papermc.paper:paper-api:1.21.6-R0.1-SNAPSHOT")
+    compileOnly("com.github.MilkBowl:VaultAPI:1.7") {
+        exclude(group = "org.bukkit", module = "bukkit")
+    }
+    compileOnly("me.clip:placeholderapi:2.12.2")
+    implementation("com.zaxxer:HikariCP:5.1.0")
 }
 
 tasks.withType<JavaCompile>().configureEach {
@@ -37,6 +47,7 @@ tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJ
     archiveBaseName.set(pluginName)
     archiveVersion.set(pluginVersion)
     archiveClassifier.set("")
+    relocate("com.zaxxer.hikari", "org.yuemi.bingogacha.plugin.lib.hikari")
 }
 
 tasks.build {

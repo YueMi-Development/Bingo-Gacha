@@ -1,0 +1,38 @@
+# Bingo Gacha Main Configuration
+config-version: 1
+
+storage:
+  type: sqlite # 'sqlite' or 'mysql'
+  sqlite:
+    file: "data.db"
+  mysql:
+    host: "localhost"
+    port: 3306
+    database: "bingo_gacha"
+    username: "root"
+    password: ""
+    pool-settings:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+# GUI Display settings for slots
+display:
+  inactive-point:
+    material: RED_STAINED_GLASS_PANE
+    name: "<red>? Locked Slot"
+    custom-model-data: 0
+  active-point:
+    material: GREEN_STAINED_GLASS_PANE
+    name: "<green>✔ Unlocked Slot"
+    custom-model-data: 0
+  roll-button:
+    material: GOLD_BLOCK
+    name: "<yellow><bold>Roll Gacha!"
+    custom-model-data: 0
+  fill:
+    material: GRAY_STAINED_GLASS_PANE
+    name: " "
+    custom-model-data: 0

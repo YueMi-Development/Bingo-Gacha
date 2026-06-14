@@ -1,0 +1,62 @@
+config-version: 1
+title: "<gold>★ Mini Bingo Gacha ★"
+size: 3x3
+repeatable: true
+completion-type: STRAIGHT_LINE
+roll-cost:
+  type: vault
+  amount: 100.0
+rewards:
+  - type: economy
+    amount: 1000.0
+  - type: command
+    command: "give %player% gold_ingot 3"
+unused-point-rewards:
+  - type: economy
+    amount: 50.0
+slots:
+  0:
+    material: COAL
+    name: "<gray>Coal Slot"
+    lore:
+      - "<gray>A dusty piece of coal."
+  1:
+    material: IRON_INGOT
+    name: "<white>Iron Slot"
+    lore:
+      - "<gray>A shiny ingot of iron."
+  2:
+    material: COPPER_INGOT
+    name: "<gold>Copper Slot"
+    lore:
+      - "<gray>A raw copper ingot."
+  3:
+    material: GOLD_INGOT
+    name: "<gold>Gold Slot"
+    lore:
+      - "<yellow>A heavy ingot of pure gold."
+  4:
+    material: REDSTONE
+    name: "<red>Redstone Slot"
+    lore:
+      - "<red>Pulsing with redstone energy."
+  5:
+    material: LAPIS_LAZULI
+    name: "<blue>Lapis Slot"
+    lore:
+      - "<blue>A deep blue lapis lazuli."
+  6:
+    material: EMERALD
+    name: "<green>Emerald Slot"
+    lore:
+      - "<green>A precious green emerald."
+  7:
+    material: DIAMOND
+    name: "<aqua>Diamond Slot"
+    lore:
+      - "<aqua>A rare and sparkling diamond."
+  8:
+    material: NETHERITE_INGOT
+    name: "<dark_purple>Netherite Slot"
+    lore:
+      - "<dark_purple>A powerful netherite alloy."
