@@ -19,6 +19,7 @@ import org.yuemi.bingogacha.api.model.CardTemplate;
 import org.yuemi.bingogacha.api.model.PlayerCard;
 import org.yuemi.bingogacha.plugin.config.BingoConfig;
 import org.yuemi.bingogacha.plugin.gui.CardListGui;
+import org.yuemi.bingogacha.plugin.gui.CardShopGui;
 import org.yuemi.bingogacha.plugin.gui.GachaGridGui;
 import org.yuemi.bingogacha.plugin.service.BingoGachaService;
 
@@ -55,6 +56,15 @@ public class BingoCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
             player.openInventory(new CardListGui(player, api, service, config).getInventory());
+            return true;
+        }
+
+        if (args[0].equalsIgnoreCase("shop")) {
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage(miniMessage.deserialize("<red>Only players can run this command."));
+                return true;
+            }
+            player.openInventory(new CardShopGui(player, api, service, config, 0).getInventory());
             return true;
         }
 
@@ -172,7 +182,7 @@ public class BingoCommand implements CommandExecutor, TabCompleter {
             @NotNull String[] args
     ) {
         if (args.length == 1) {
-            List<String> suggestions = new ArrayList<>(List.of("list", "claim", "open"));
+            List<String> suggestions = new ArrayList<>(List.of("list", "shop", "claim", "open"));
             if (sender.hasPermission("bingogacha.admin")) {
                 suggestions.add("admin");
             }

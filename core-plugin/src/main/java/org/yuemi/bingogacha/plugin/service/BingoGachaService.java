@@ -201,7 +201,10 @@ public class BingoGachaService {
     }
 
     private boolean chargeCost(@NotNull Player player, @NotNull CardTemplate template) {
-        Map<String, Object> cost = template.getRollCost();
+        return chargeGenericCost(player, template.getRollCost());
+    }
+
+    private boolean chargeGenericCost(@NotNull Player player, @NotNull Map<String, Object> cost) {
         if (cost.isEmpty()) {
             return true;
         }
@@ -231,5 +234,51 @@ public class BingoGachaService {
             return true;
         }
         return true;
+    }
+
+    /**
+     * Purchases and claims a card template for the player.
+     *
+     * @param player   the player
+     * @param template the card template
+     * @return 0 = Success, 1 = Cannot claim (non-repeatable or active already exists), 2 = Not enough money/items for buy cost, 3 = Template not buyable
+     */
+    public int buyCard(@NotNull Player player, @NotNull CardTemplate template) {
+        if (!template.isBuyable()) {
+            return 3;
+        }
+
+        List<PlayerCard> currentCards = repository.loadPlayerCards(player.getUniqueId());
+
+        // Check repeatable rules
+        if (!template.isRepeatable()) {
+            boolean alreadyHas = currentCards.stream().anyMatch(c -> c.getTemplateId().equals(template.getId()));
+            if (alreadyHas) {
+                return 1;
+            }
+        } else {
+            boolean hasActive = currentCards.stream().anyMatch(c -> c.getTemplateId().equals(template.getId()) && !c.isCompleted());
+            if (hasActive) {
+                return 1;
+            }
+        }
+
+        // Check & charge buy cost
+        if (!chargeGenericCost(player, template.getBuyCost())) {
+            return 2;
+        }
+
+        // Claim card
+        PlayerCard newCard = new PlayerCard(
+                -1,
+                player.getUniqueId(),
+                template.getId(),
+                new java.util.HashSet<>(),
+                false,
+                System.currentTimeMillis(),
+                0
+        );
+        repository.savePlayerCard(newCard);
+        return 0; // Success
     }
 }

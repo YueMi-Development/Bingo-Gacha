@@ -31,10 +31,9 @@ public class CardListGui implements BingoGuiHolder {
     private final Inventory inventory;
 
     private final Map<Integer, PlayerCard> activeCardSlots = new HashMap<>();
-    private final Map<Integer, CardTemplate> templateSlots = new HashMap<>();
 
     private int currentPage = 0;
-    private static final int CARDS_PER_PAGE = 21;
+    private static final int CARDS_PER_PAGE = 28;
 
     public CardListGui(
             @NotNull Player player,
@@ -42,12 +41,30 @@ public class CardListGui implements BingoGuiHolder {
             @NotNull BingoGachaService service,
             @NotNull BingoConfig config
     ) {
+        this(player, api, service, config, 0);
+    }
+
+    public CardListGui(
+            @NotNull Player player,
+            @NotNull BingoGachaApi api,
+            @NotNull BingoGachaService service,
+            @NotNull BingoConfig config,
+            int page
+    ) {
         this.player = player;
         this.api = api;
         this.service = service;
         this.config = config;
-        this.inventory = Bukkit.createInventory(this, 54, miniMessage.deserialize("<gold><bold>Bingo Gacha Cards"));
-        
+        this.currentPage = page;
+
+        List<PlayerCard> playerCards = api.getPlayerCardRepository().loadPlayerCards(player.getUniqueId());
+        int totalCards = playerCards.size();
+        int maxPages = Math.max(1, (totalCards + CARDS_PER_PAGE - 1) / CARDS_PER_PAGE);
+
+        this.inventory = Bukkit.createInventory(this, 54, miniMessage.deserialize(
+                "<gold><bold>Bingo Gacha Cards <gray>(" + (currentPage + 1) + "/" + maxPages + ")"
+        ));
+
         setupDecorations();
         render();
     }
@@ -75,23 +92,14 @@ public class CardListGui implements BingoGuiHolder {
             activeHeader.setItemMeta(activeMeta);
         }
         inventory.setItem(4, activeHeader);
-
-        ItemStack claimHeader = new ItemStack(Material.WRITABLE_BOOK);
-        ItemMeta claimMeta = claimHeader.getItemMeta();
-        if (claimMeta != null) {
-            claimMeta.displayName(miniMessage.deserialize("<green><bold>Available Templates to Claim"));
-            claimHeader.setItemMeta(claimMeta);
-        }
-        inventory.setItem(40, claimHeader);
     }
 
     public void render() {
         // Clear old slots and reset grid items to air
         activeCardSlots.clear();
-        templateSlots.clear();
 
-        // Clear card slots (10-16, 19-25, 28-34)
-        for (int row = 1; row <= 3; row++) {
+        // Clear card slots (10-16, 19-25, 28-34, 37-43)
+        for (int row = 1; row <= 4; row++) {
             for (int col = 1; col <= 7; col++) {
                 inventory.setItem(row * 9 + col, null);
             }
@@ -180,60 +188,17 @@ public class CardListGui implements BingoGuiHolder {
             inventory.setItem(53, filler);
         }
 
-        // 3. Render Claimable Templates (slots 37-43 skipping 40)
-        int templateSlotIndex = 37;
-        for (CardTemplate template : api.getTemplates()) {
-            boolean hasActive = playerCards.stream().anyMatch(c -> c.getTemplateId().equals(template.getId()) && !c.isCompleted());
-            boolean hasCompleted = playerCards.stream().anyMatch(c -> c.getTemplateId().equals(template.getId()) && c.isCompleted());
-
-            if (!template.isRepeatable() && hasCompleted) {
-                continue;
-            }
-            if (hasActive) {
-                continue;
-            }
-
-            ItemStack claimItem = new ItemStack(Material.GOLDEN_CARROT);
-            ItemMeta meta = claimItem.getItemMeta();
-            if (meta != null) {
-                meta.displayName(miniMessage.deserialize("<green>" + template.getTitle()));
-                
-                String costText = "Free";
-                Map<String, Object> cost = template.getRollCost();
-                if (!cost.isEmpty()) {
-                    String type = (String) cost.get("type");
-                    if ("vault".equalsIgnoreCase(type)) {
-                        costText = "$" + cost.get("amount") + " per roll";
-                    } else if ("item".equalsIgnoreCase(type)) {
-                        costText = cost.get("amount") + "x " + cost.get("material") + " per roll";
-                    }
-                }
-
-                List<String> lore = List.of(
-                        miniMessage.serialize(miniMessage.deserialize("<gray>Size: <white>" + (template.getSize() == org.yuemi.bingogacha.api.model.CardSize.FIVE_BY_FIVE ? "5x5" : "3x3"))),
-                        miniMessage.serialize(miniMessage.deserialize("<gray>Cost: <yellow>" + costText)),
-                        miniMessage.serialize(miniMessage.deserialize("<gray>Repeatable: <white>" + template.isRepeatable())),
-                        "",
-                        miniMessage.serialize(miniMessage.deserialize("<green>Click to start this card!"))
-                );
-                meta.lore(lore.stream().map(miniMessage::deserialize).toList());
-                claimItem.setItemMeta(meta);
-            }
-
-            inventory.setItem(templateSlotIndex, claimItem);
-            templateSlots.put(templateSlotIndex, template);
-
-            templateSlotIndex++;
-            if (templateSlotIndex == 40) {
-                templateSlotIndex++; // Skip the Claim Header
-            }
-            if (templateSlotIndex % 9 == 8) {
-                templateSlotIndex += 2;
-            }
-            if (templateSlotIndex >= 44) {
-                break;
-            }
+        // 3. Render Card Shop Button at slot 49
+        ItemStack shopItem = new ItemStack(Material.EMERALD);
+        ItemMeta shopMeta = shopItem.getItemMeta();
+        if (shopMeta != null) {
+            shopMeta.displayName(miniMessage.deserialize("<green><bold>Card Shop"));
+            shopMeta.lore(List.of(
+                    miniMessage.deserialize("<gray>Click to browse and buy new bingo cards!")
+            ));
+            shopItem.setItemMeta(shopMeta);
         }
+        inventory.setItem(49, shopItem);
     }
 
     @Override
@@ -241,9 +206,8 @@ public class CardListGui implements BingoGuiHolder {
         int slot = event.getSlot();
 
         if (slot == 45 && currentPage > 0) {
-            currentPage--;
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.0f);
-            render();
+            player.openInventory(new CardListGui(player, api, service, config, currentPage - 1).getInventory());
             return;
         }
 
@@ -251,11 +215,16 @@ public class CardListGui implements BingoGuiHolder {
             List<PlayerCard> playerCards = api.getPlayerCardRepository().loadPlayerCards(player.getUniqueId());
             int maxPages = Math.max(1, (playerCards.size() + CARDS_PER_PAGE - 1) / CARDS_PER_PAGE);
             if (currentPage < maxPages - 1) {
-                currentPage++;
                 player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.0f);
-                render();
+                player.openInventory(new CardListGui(player, api, service, config, currentPage + 1).getInventory());
                 return;
             }
+        }
+
+        if (slot == 49) {
+            player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.0f);
+            player.openInventory(new CardShopGui(player, api, service, config, 0).getInventory());
+            return;
         }
 
         if (activeCardSlots.containsKey(slot)) {
@@ -264,17 +233,6 @@ public class CardListGui implements BingoGuiHolder {
             if (template != null) {
                 player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.0f);
                 player.openInventory(new GachaGridGui(player, card, template, api, service, config).getInventory());
-            }
-        } else if (templateSlots.containsKey(slot)) {
-            CardTemplate template = templateSlots.get(slot);
-            PlayerCard claimed = service.claimCard(player, template);
-            if (claimed != null) {
-                player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.2f);
-                player.sendMessage(miniMessage.deserialize("<green>Successfully claimed a new bingo card!"));
-                player.openInventory(new GachaGridGui(player, claimed, template, api, service, config).getInventory());
-            } else {
-                player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
-                player.sendMessage(miniMessage.deserialize("<red>You cannot claim this card! You might already have it active."));
             }
         }
     }

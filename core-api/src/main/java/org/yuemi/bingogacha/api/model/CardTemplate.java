@@ -13,6 +13,8 @@ public class CardTemplate {
     private final CardSize size;
     private final CompletionType completionType;
     private final boolean repeatable;
+    private final boolean buyable;
+    private final Map<String, Object> buyCost;
     private final Map<String, Object> rollCost;
     private final List<Reward> rewards;
     private final List<Reward> unusedPointRewards;
@@ -25,6 +27,8 @@ public class CardTemplate {
             @NotNull CardSize size,
             @NotNull CompletionType completionType,
             boolean repeatable,
+            boolean buyable,
+            @NotNull Map<String, Object> buyCost,
             @NotNull Map<String, Object> rollCost,
             @NotNull List<Reward> rewards,
             @NotNull List<Reward> unusedPointRewards,
@@ -36,6 +40,8 @@ public class CardTemplate {
         this.size = size;
         this.completionType = completionType;
         this.repeatable = repeatable;
+        this.buyable = buyable;
+        this.buyCost = buyCost;
         this.rollCost = rollCost;
         this.rewards = rewards;
         this.unusedPointRewards = unusedPointRewards;
@@ -65,6 +71,15 @@ public class CardTemplate {
 
     public boolean isRepeatable() {
         return repeatable;
+    }
+
+    public boolean isBuyable() {
+        return buyable;
+    }
+
+    @NotNull
+    public Map<String, Object> getBuyCost() {
+        return buyCost;
     }
 
     @NotNull

@@ -105,6 +105,10 @@ public class BingoConfig {
             for (File file : files) {
                 String id = file.getName().substring(0, file.getName().length() - 4);
                 YamlConfiguration cardConfig = YamlConfiguration.loadConfiguration(file);
+                
+                // Migrate card config if new keys were added in resources
+                migrateCardConfig(file, cardConfig);
+                
                 int cardVersion = cardConfig.getInt("config-version", 1);
                 plugin.getLogger().info("Loading card template '" + id + "' (version " + cardVersion + ")");
                 
@@ -130,6 +134,16 @@ public class BingoConfig {
         CompletionType completionType = compStr.equals("FULL_CARD") ? CompletionType.FULL_CARD : CompletionType.STRAIGHT_LINE;
 
         boolean repeatable = sec.getBoolean("repeatable", true);
+        boolean buyable = sec.getBoolean("buyable", true);
+
+        // Parse buy cost
+        Map<String, Object> buyCost = new HashMap<>();
+        ConfigurationSection buyCostSec = sec.getConfigurationSection("buy-cost");
+        if (buyCostSec != null) {
+            for (String k : buyCostSec.getKeys(false)) {
+                buyCost.put(k, buyCostSec.get(k));
+            }
+        }
 
         // Parse cost
         Map<String, Object> rollCost = new HashMap<>();
@@ -182,7 +196,7 @@ public class BingoConfig {
             }
         }
 
-        return new CardTemplate(id, title, size, completionType, repeatable, rollCost, rewards, unusedPointRewards, slots, displayOverrides);
+        return new CardTemplate(id, title, size, completionType, repeatable, buyable, buyCost, rollCost, rewards, unusedPointRewards, slots, displayOverrides);
     }
 
     @NotNull
@@ -292,6 +306,33 @@ public class BingoConfig {
         } catch (Exception e) {
             plugin.getLogger().severe("Failed to migrate config.yml: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    private void migrateCardConfig(File file, YamlConfiguration cardConfig) {
+        boolean modified = false;
+
+        if (!cardConfig.contains("buyable")) {
+            cardConfig.set("buyable", true);
+            modified = true;
+        }
+
+        if (!cardConfig.contains("buy-cost")) {
+            ConfigurationSection buySec = cardConfig.createSection("buy-cost");
+            buySec.set("type", "vault");
+            buySec.set("amount", 500.0);
+            modified = true;
+        }
+
+        int currentVersion = cardConfig.getInt("config-version", 1);
+        if (currentVersion < 2 || modified) {
+            cardConfig.set("config-version", 2);
+            try {
+                cardConfig.save(file);
+                plugin.getLogger().info("Migrated card template '" + file.getName() + "' to version 2");
+            } catch (Exception e) {
+                plugin.getLogger().severe("Failed to save migrated card template '" + file.getName() + "': " + e.getMessage());
+            }
         }
     }
 }

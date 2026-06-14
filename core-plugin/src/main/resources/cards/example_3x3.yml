@@ -1,8 +1,12 @@
-config-version: 1
+config-version: 2
 title: "<gold>★ Mini Bingo Gacha ★"
 size: 3x3
 repeatable: true
 completion-type: STRAIGHT_LINE
+buyable: true
+buy-cost:
+  type: vault
+  amount: 500.0
 roll-cost:
   type: vault
   amount: 100.0

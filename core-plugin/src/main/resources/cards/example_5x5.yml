@@ -1,8 +1,12 @@
-config-version: 1
+config-version: 2
 title: "<light_purple>★ Mega Bingo Gacha ★"
 size: 5x5
 repeatable: false
 completion-type: FULL_CARD
+buyable: true
+buy-cost:
+  type: vault
+  amount: 1000.0
 roll-cost:
   type: item
   material: EMERALD
