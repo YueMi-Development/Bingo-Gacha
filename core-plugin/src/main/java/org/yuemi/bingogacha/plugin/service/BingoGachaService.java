@@ -12,6 +12,7 @@ import org.yuemi.bingogacha.api.event.PlayerCardCompleteEvent;
 import org.yuemi.bingogacha.api.model.*;
 import org.yuemi.bingogacha.api.reward.Reward;
 import org.yuemi.bingogacha.api.repository.PlayerCardRepositoryInterface;
+import org.yuemi.bingogacha.plugin.config.BingoConfig;
 import org.yuemi.bingogacha.plugin.hook.VaultHook;
 
 public class BingoGachaService {
@@ -19,6 +20,10 @@ public class BingoGachaService {
     private final JavaPlugin plugin;
     private final PlayerCardRepositoryInterface repository;
     private final VaultHook vaultHook;
+    private final BingoConfig config;
+    
+    // Concurrent map to track player cooldown timestamps safely
+    private final Map<UUID, Long> rollCooldowns = new java.util.concurrent.ConcurrentHashMap<>();
 
     // Mathematical representation of bingo lines
     private static final List<int[]> LINES_3X3 = List.of(
@@ -42,11 +47,13 @@ public class BingoGachaService {
     public BingoGachaService(
             @NotNull JavaPlugin plugin,
             @NotNull PlayerCardRepositoryInterface repository,
-            @NotNull VaultHook vaultHook
+            @NotNull VaultHook vaultHook,
+            @NotNull BingoConfig config
     ) {
         this.plugin = plugin;
         this.repository = repository;
         this.vaultHook = vaultHook;
+        this.config = config;
     }
 
     /**
@@ -104,6 +111,13 @@ public class BingoGachaService {
             return 1;
         }
 
+        // Cooldown check
+        long lastRoll = rollCooldowns.getOrDefault(player.getUniqueId(), 0L);
+        long cooldownMs = config.getRollCooldownMs();
+        if (System.currentTimeMillis() - lastRoll < cooldownMs) {
+            return 4; // Code 4 = On cooldown
+        }
+
         int totalSlotsCount = template.getSize().getTotalSlots();
         Set<Integer> unlocked = card.getUnlockedSlots();
         
@@ -115,6 +129,9 @@ public class BingoGachaService {
         if (!chargeCost(player, template)) {
             return 2;
         }
+
+        // Record cooldown timestamp
+        rollCooldowns.put(player.getUniqueId(), System.currentTimeMillis());
 
         // Find locked slots
         List<Integer> locked = new ArrayList<>();

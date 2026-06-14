@@ -19,6 +19,7 @@ public class BingoConfig {
     private final Map<String, CardTemplate> templates = new HashMap<>();
     private String storageType = "sqlite";
     private final Map<String, Object> dbSettings = new HashMap<>();
+    private long rollCooldownMs = 1000L;
 
     // Display configurations
     private String inactivePointMaterial = "RED_STAINED_GLASS_PANE";
@@ -59,10 +60,15 @@ public class BingoConfig {
         // Load config.yml
         File configFile = new File(plugin.getDataFolder(), "config.yml");
         YamlConfiguration config = YamlConfiguration.loadConfiguration(configFile);
+        
+        // Migrate config if new keys were added in resources
+        migrateConfig(configFile, config);
+
         int configVersion = config.getInt("config-version", 1);
         plugin.getLogger().info("Loading config.yml (version " + configVersion + ")");
 
         storageType = config.getString("storage.type", "sqlite").toLowerCase();
+        rollCooldownMs = config.getLong("roll-cooldown-ms", 1000L);
         
         ConfigurationSection storageSec = config.getConfigurationSection("storage");
         if (storageSec != null) {
@@ -253,5 +259,39 @@ public class BingoConfig {
 
     public int getFillCustomModelData() {
         return fillCustomModelData;
+    }
+
+    public long getRollCooldownMs() {
+        return rollCooldownMs;
+    }
+
+    private void migrateConfig(File file, YamlConfiguration config) {
+        try (java.io.InputStream defStream = plugin.getResource("config.yml")) {
+            if (defStream == null) {
+                return;
+            }
+            java.io.InputStreamReader reader = new java.io.InputStreamReader(defStream, java.nio.charset.StandardCharsets.UTF_8);
+            YamlConfiguration defConfig = YamlConfiguration.loadConfiguration(reader);
+
+            int currentVersion = config.getInt("config-version", 1);
+            int defaultVersion = defConfig.getInt("config-version", 1);
+
+            boolean modified = false;
+            for (String key : defConfig.getKeys(true)) {
+                if (!config.contains(key)) {
+                    config.set(key, defConfig.get(key));
+                    modified = true;
+                }
+            }
+
+            if (currentVersion < defaultVersion || modified) {
+                config.set("config-version", defaultVersion);
+                config.save(file);
+                plugin.getLogger().info("Migrated config.yml to version " + defaultVersion);
+            }
+        } catch (Exception e) {
+            plugin.getLogger().severe("Failed to migrate config.yml: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }

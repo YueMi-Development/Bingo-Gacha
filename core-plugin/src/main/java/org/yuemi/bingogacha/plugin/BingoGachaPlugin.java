@@ -67,7 +67,7 @@ public final class BingoGachaPlugin extends JavaPlugin implements Listener {
         repository = new PlayerCardRepository(this, databaseManager);
 
         // 6. Setup Service
-        service = new BingoGachaService(this, repository, vaultHook);
+        service = new BingoGachaService(this, repository, vaultHook, config);
 
         // 7. Setup API
         api = new BingoGachaApiImpl(rewardManager, repository, config);

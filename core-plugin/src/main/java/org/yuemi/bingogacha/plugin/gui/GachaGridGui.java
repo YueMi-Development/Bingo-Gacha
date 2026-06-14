@@ -307,6 +307,9 @@ public class GachaGridGui implements BingoGuiHolder {
             } else if (result == 2) {
                 player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
                 player.sendMessage(miniMessage.deserialize("<red>You cannot afford the cost of this roll!"));
+            } else if (result == 4) {
+                player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0f, 1.5f);
+                player.sendMessage(miniMessage.deserialize("<red>Please wait a moment before rolling again!"));
             } else {
                 player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
                 player.sendMessage(miniMessage.deserialize("<red>An error occurred or no slots are remaining."));

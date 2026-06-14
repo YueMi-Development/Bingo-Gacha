@@ -18,6 +18,9 @@ storage:
       idle-timeout: 600000
       max-lifetime: 1800000
 
+# Cooldown between rolls in milliseconds (prevents spamming)
+roll-cooldown-ms: 1000
+
 # GUI Display settings for slots
 display:
   inactive-point:
