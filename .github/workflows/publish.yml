@@ -1,0 +1,64 @@
+name: Publish API
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Grant gradlew permission
+        run: chmod +x gradlew
+
+      - name: Publish to Yuemi Maven
+        env:
+          MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
+        run: ./gradlew :core-api:publish --no-daemon
+
+      - name: Build Shaded JAR
+        run: ./gradlew :core-plugin:build --no-daemon
+
+      - name: Read Modrinth Configuration
+        id: modrinth_config
+        run: |
+          PROJECT_ID=$(jq -r '.projectId' modrinth.json)
+          LOADERS=$(jq -c '.loaders' modrinth.json)
+          GAME_VERSIONS=$(jq -c '.gameVersions' modrinth.json)
+          
+          # Clean version from the tag (which starts with v)
+          TAG_NAME="${{ github.ref_name }}"
+          VERSION_NUMBER=$(echo "$TAG_NAME" | sed 's/^v//')
+          
+          # Find the built JAR file
+          JAR_PATH=$(find core-plugin/build/libs -name "*.jar" ! -name "*-plain.jar" | head -n 1)
+          
+          echo "project_id=$PROJECT_ID" >> $GITHUB_OUTPUT
+          echo "loaders=$LOADERS" >> $GITHUB_OUTPUT
+          echo "game_versions=$GAME_VERSIONS" >> $GITHUB_OUTPUT
+          echo "version=$VERSION_NUMBER" >> $GITHUB_OUTPUT
+          echo "jar_path=$JAR_PATH" >> $GITHUB_OUTPUT
+
+      - name: Publish to Modrinth
+        uses: cloudnode-pro/modrinth-publish@v1
+        with:
+          token: ${{ secrets.MODRINTH_TOKEN }}
+          project: ${{ steps.modrinth_config.outputs.project_id }}
+          version: ${{ steps.modrinth_config.outputs.version }}
+          loaders: ${{ steps.modrinth_config.outputs.loaders }}
+          game-versions: ${{ steps.modrinth_config.outputs.game_versions }}
+          files: ${{ steps.modrinth_config.outputs.jar_path }}
+
