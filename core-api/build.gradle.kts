@@ -4,13 +4,15 @@ plugins {
 }
 
 val pluginName: String by project
-val yuemiMaven: String by project
+val yuemiMavenSnapshot: String by project
+val yuemiMavenRelease: String by project
 val repoUrl: String by project
 val developerId: String by project
 val developerName: String by project
 
 require(pluginName.isNotBlank())
-require(yuemiMaven.isNotBlank())
+require(yuemiMavenSnapshot.isNotBlank())
+require(yuemiMavenRelease.isNotBlank())
 require(repoUrl.isNotBlank())
 require(developerId.isNotBlank())
 require(developerName.isNotBlank())
@@ -80,7 +82,8 @@ publishing {
     repositories {
         maven {
             name = "YuemiMaven"
-            url = uri(yuemiMaven)
+            val isSnapshot = project.version.toString().endsWith("-SNAPSHOT")
+            url = uri(if (isSnapshot) yuemiMavenSnapshot else yuemiMavenRelease)
 
             credentials {
                 username = System.getenv("MAVEN_USERNAME")
