@@ -73,7 +73,7 @@ jobs:
           echo "jar_path=$JAR_PATH" >> $GITHUB_OUTPUT
 
       - name: Publish to Modrinth
-        uses: cloudnode-pro/modrinth-publish@v1
+        uses: cloudnode-pro/modrinth-publish@v2.4.1
         with:
           token: ${{ secrets.MODRINTH_TOKEN }}
           project: ${{ steps.modrinth_config.outputs.project_id }}
