@@ -2,12 +2,14 @@ name: Publish API
 
 on:
   push:
-    tags:
+    branches:
       - "v*"
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout
@@ -25,17 +27,18 @@ jobs:
 
       - name: Verify and Update Version
         run: |
-          TAG_VERSION=$(echo "${{ github.ref_name }}" | sed 's/^v//')
+          BRANCH_VERSION=$(echo "${{ github.ref_name }}" | sed 's/^v//')
           GRADLE_VERSION=$(grep "^version=" gradle.properties | cut -d'=' -f2)
-          echo "Tag version: $TAG_VERSION"
+          echo "Branch version: $BRANCH_VERSION"
           echo "Gradle version: $GRADLE_VERSION"
-          if [ "$TAG_VERSION" != "$GRADLE_VERSION" ]; then
+          if [ "$BRANCH_VERSION" != "$GRADLE_VERSION" ]; then
             echo "Versions differ. Updating gradle.properties..."
-            sed -i "s/^version=.*/version=$TAG_VERSION/" gradle.properties
+            sed -i "s/^version=.*/version=$BRANCH_VERSION/" gradle.properties
             git config --local user.email "action@github.com"
             git config --local user.name "GitHub Action"
             git add gradle.properties
-            git commit -m "chore: update version to $TAG_VERSION"
+            git commit -m "chore: update version to $BRANCH_VERSION"
+            git push origin HEAD:${{ github.ref_name }}
           else
             echo "Versions match. No update needed."
           fi
@@ -56,9 +59,9 @@ jobs:
           LOADERS=$(jq -c '.loaders' modrinth.json)
           GAME_VERSIONS=$(jq -c '.gameVersions' modrinth.json)
           
-          # Clean version from the tag (which starts with v)
-          TAG_NAME="${{ github.ref_name }}"
-          VERSION_NUMBER=$(echo "$TAG_NAME" | sed 's/^v//')
+          # Clean version from the branch (which starts with v)
+          BRANCH_NAME="${{ github.ref_name }}"
+          VERSION_NUMBER=$(echo "$BRANCH_NAME" | sed 's/^v//')
           
           # Find the built JAR file
           JAR_PATH=$(find core-plugin/build/libs -name "*.jar" ! -name "*-plain.jar" | head -n 1)
@@ -78,4 +81,14 @@ jobs:
           loaders: ${{ steps.modrinth_config.outputs.loaders }}
           game-versions: ${{ steps.modrinth_config.outputs.game_versions }}
           files: ${{ steps.modrinth_config.outputs.jar_path }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          files: ${{ steps.modrinth_config.outputs.jar_path }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
