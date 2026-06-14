@@ -1,3 +1,5 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+
 plugins {
     java
     id("com.gradleup.shadow") version "8.3.0" // Shadow plugin
@@ -8,6 +10,8 @@ val repoUrl: String by project
 val developerId: String by project
 val developerName: String by project
 val pluginVersion: String = project.version.toString()
+val apiVersion: String by project
+val authors: String by project
 
 repositories {
     maven("https://jitpack.io")
@@ -52,4 +56,17 @@ tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJ
 
 tasks.build {
     dependsOn(tasks.named("shadowJar"))
+}
+
+tasks.processResources {
+    val tokens = mapOf(
+        "version" to pluginVersion,
+        "apiVersion" to apiVersion,
+        "authors" to authors
+    )
+    inputs.properties(tokens)
+
+    filesMatching("plugin.yml") {
+        filter<ReplaceTokens>("tokens" to tokens)
+    }
 }

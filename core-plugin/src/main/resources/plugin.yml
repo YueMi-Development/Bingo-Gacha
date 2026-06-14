@@ -1,7 +1,8 @@
 name: BingoGacha
-version: 1.0.0
+version: '@version@'
 main: org.yuemi.bingogacha.plugin.BingoGachaPlugin
-api-version: 1.21
+api-version: '@apiVersion@'
+authors: [@authors@]
 softdepend: [Vault, PlaceholderAPI]
 commands:
   bingo:
