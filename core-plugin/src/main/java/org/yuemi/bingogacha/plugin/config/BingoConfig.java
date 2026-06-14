@@ -13,6 +13,9 @@ import org.yuemi.bingogacha.api.reward.RewardManager;
 
 public class BingoConfig {
 
+    public static final int LATEST_CONFIG_VERSION = 2;
+    public static final int LATEST_CARD_VERSION = 2;
+
     private final JavaPlugin plugin;
     private final RewardManager rewardManager;
 
@@ -310,6 +313,34 @@ public class BingoConfig {
     }
 
     private void migrateCardConfig(File file, YamlConfiguration cardConfig) {
+        // Try to migrate using resource defaults if the file exists in the jar resources
+        try (java.io.InputStream defStream = plugin.getResource("cards/" + file.getName())) {
+            if (defStream != null) {
+                java.io.InputStreamReader reader = new java.io.InputStreamReader(defStream, java.nio.charset.StandardCharsets.UTF_8);
+                YamlConfiguration defCardConfig = YamlConfiguration.loadConfiguration(reader);
+                int defaultVersion = defCardConfig.getInt("config-version", 1);
+                int currentVersion = cardConfig.getInt("config-version", 1);
+
+                boolean modified = false;
+                for (String key : defCardConfig.getKeys(true)) {
+                    if (!cardConfig.contains(key)) {
+                        cardConfig.set(key, defCardConfig.get(key));
+                        modified = true;
+                    }
+                }
+
+                if (currentVersion < defaultVersion || modified) {
+                    cardConfig.set("config-version", defaultVersion);
+                    cardConfig.save(file);
+                    plugin.getLogger().info("Migrated card template '" + file.getName() + "' to version " + defaultVersion);
+                }
+                return;
+            }
+        } catch (Exception e) {
+            plugin.getLogger().severe("Failed to migrate card template '" + file.getName() + "' from resources: " + e.getMessage());
+        }
+
+        // Fallback for custom templates not in the jar resources
         boolean modified = false;
 
         if (!cardConfig.contains("buyable")) {
@@ -325,13 +356,13 @@ public class BingoConfig {
         }
 
         int currentVersion = cardConfig.getInt("config-version", 1);
-        if (currentVersion < 2 || modified) {
-            cardConfig.set("config-version", 2);
+        if (currentVersion < LATEST_CARD_VERSION || modified) {
+            cardConfig.set("config-version", LATEST_CARD_VERSION);
             try {
                 cardConfig.save(file);
-                plugin.getLogger().info("Migrated card template '" + file.getName() + "' to version 2");
+                plugin.getLogger().info("Migrated custom card template '" + file.getName() + "' to version " + LATEST_CARD_VERSION);
             } catch (Exception e) {
-                plugin.getLogger().severe("Failed to save migrated card template '" + file.getName() + "': " + e.getMessage());
+                plugin.getLogger().severe("Failed to save migrated custom card template '" + file.getName() + "': " + e.getMessage());
             }
         }
     }

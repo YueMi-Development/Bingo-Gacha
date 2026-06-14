@@ -1,5 +1,5 @@
 # Bingo Gacha Main Configuration
-config-version: 1
+config-version: 2
 
 storage:
   type: sqlite # 'sqlite' or 'mysql'
