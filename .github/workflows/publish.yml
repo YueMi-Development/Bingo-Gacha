@@ -14,6 +14,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
 
       - name: Set up Java 21
         uses: actions/setup-java@v4
@@ -72,6 +75,26 @@ jobs:
           echo "version=$VERSION_NUMBER" >> $GITHUB_OUTPUT
           echo "jar_path=$JAR_PATH" >> $GITHUB_OUTPUT
 
+      - name: Generate Changelog
+        id: changelog
+        run: |
+          git fetch --tags --force
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || true)
+          if [ -z "$PREV_TAG" ]; then
+            echo "No previous tag found. Generating changelog from all commits."
+            CHANGELOG=$(git log --pretty=format:"* %s (%h)" HEAD)
+          else
+            echo "Generating changelog between $PREV_TAG and HEAD."
+            CHANGELOG=$(git log --pretty=format:"* %s (%h)" $PREV_TAG..HEAD)
+          fi
+          
+          # Write to GITHUB_OUTPUT
+          {
+            echo "changelog<<EOF"
+            echo "$CHANGELOG"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Publish to Modrinth
         uses: cloudnode-pro/modrinth-publish@v2.4.1
         with:
@@ -81,6 +104,7 @@ jobs:
           loaders: ${{ steps.modrinth_config.outputs.loaders }}
           game-versions: ${{ steps.modrinth_config.outputs.game_versions }}
           files: ${{ steps.modrinth_config.outputs.jar_path }}
+          changelog: ${{ steps.changelog.outputs.changelog }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -88,7 +112,6 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
           files: ${{ steps.modrinth_config.outputs.jar_path }}
-          generate_release_notes: true
+          body: ${{ steps.changelog.outputs.changelog }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
