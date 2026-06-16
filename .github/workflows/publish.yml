@@ -61,6 +61,7 @@ jobs:
           PROJECT_ID=$(jq -r '.projectId' modrinth.json)
           LOADERS=$(jq -c '.loaders' modrinth.json)
           GAME_VERSIONS=$(jq -c '.gameVersions' modrinth.json)
+          DEPENDENCIES=$(jq -c '[.dependencies[]? | {project_id: (.project_id // .projectId), dependency_type: (.dependency_type // .dependencyType), version_id: (.version_id // .versionId), file_name: (.file_name // .fileName)} | with_entries(select(.value != null))]' modrinth.json)
           
           # Clean version from the branch (which starts with v)
           BRANCH_NAME="${{ github.ref_name }}"
@@ -72,6 +73,7 @@ jobs:
           echo "project_id=$PROJECT_ID" >> $GITHUB_OUTPUT
           echo "loaders=$LOADERS" >> $GITHUB_OUTPUT
           echo "game_versions=$GAME_VERSIONS" >> $GITHUB_OUTPUT
+          echo "dependencies=$DEPENDENCIES" >> $GITHUB_OUTPUT
           echo "version=$VERSION_NUMBER" >> $GITHUB_OUTPUT
           echo "jar_path=$JAR_PATH" >> $GITHUB_OUTPUT
 
@@ -105,6 +107,7 @@ jobs:
           game-versions: ${{ steps.modrinth_config.outputs.game_versions }}
           files: ${{ steps.modrinth_config.outputs.jar_path }}
           changelog: ${{ steps.changelog.outputs.changelog }}
+          dependencies: ${{ steps.modrinth_config.outputs.dependencies }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
