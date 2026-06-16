@@ -21,6 +21,7 @@ repositories {
 dependencies {
     implementation(project(":core-api"))
     compileOnly("io.papermc.paper:paper-api:1.21.6-R0.1-SNAPSHOT")
+    compileOnly("org.yuemi:YueMiLibs-api:1.0.1")
     compileOnly("com.github.MilkBowl:VaultAPI:1.7") {
         exclude(group = "org.bukkit", module = "bukkit")
     }

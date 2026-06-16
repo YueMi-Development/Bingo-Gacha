@@ -3,6 +3,7 @@ version: '@version@'
 main: org.yuemi.bingogacha.plugin.BingoGachaPlugin
 api-version: '@apiVersion@'
 authors: [@authors@]
+depend: [YueMiLibs]
 softdepend: [Vault, PlaceholderAPI]
 commands:
   bingo:

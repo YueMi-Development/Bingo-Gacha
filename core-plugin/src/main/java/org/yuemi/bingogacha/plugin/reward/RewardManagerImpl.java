@@ -118,6 +118,14 @@ public class RewardManagerImpl implements RewardManager {
 
         @Override
         public void give(@NotNull Player player) {
+            org.yuemi.libs.api.YueMiLibsApi api = org.yuemi.libs.api.YueMiLibsProvider.getApi();
+            if (api != null) {
+                org.yuemi.libs.api.economy.EconomyProvider provider = api.getEconomy().getActiveProvider();
+                if (provider != null && provider.isAvailable()) {
+                    provider.deposit(player, amount);
+                    return;
+                }
+            }
             if (vaultHook.isEnabled()) {
                 vaultHook.deposit(player, amount);
             }
@@ -217,6 +225,14 @@ public class RewardManagerImpl implements RewardManager {
 
         @Override
         public void give(@NotNull Player player) {
+            org.yuemi.libs.api.YueMiLibsApi api = org.yuemi.libs.api.YueMiLibsProvider.getApi();
+            if (api != null) {
+                String key = pluginName.toLowerCase() + ":" + itemId;
+                if (api.getItems().giveItem(player, key, amount)) {
+                    return;
+                }
+            }
+
             ItemStack item = ItemPluginHook.getCustomItem(pluginName, itemId);
             if (item == null) {
                 return;

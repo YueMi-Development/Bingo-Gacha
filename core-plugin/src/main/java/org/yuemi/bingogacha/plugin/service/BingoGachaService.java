@@ -218,6 +218,20 @@ public class BingoGachaService {
         if (type.equalsIgnoreCase("vault")) {
             double amount = ((Number) cost.getOrDefault("amount", 0.0)).doubleValue();
             if (amount <= 0) return true;
+
+            // Try YueMiLibs economy first
+            org.yuemi.libs.api.YueMiLibsApi api = org.yuemi.libs.api.YueMiLibsProvider.getApi();
+            if (api != null) {
+                org.yuemi.libs.api.economy.EconomyProvider provider = api.getEconomy().getActiveProvider();
+                if (provider != null && provider.isAvailable()) {
+                    if (provider.getBalance(player) < amount) {
+                        return false;
+                    }
+                    return provider.withdraw(player, amount);
+                }
+            }
+
+            // Fallback to Vault
             if (!vaultHook.hasEnough(player, amount)) {
                 return false;
             }
@@ -226,6 +240,18 @@ public class BingoGachaService {
             String materialStr = (String) cost.get("material");
             int amount = ((Number) cost.getOrDefault("amount", 1)).intValue();
             if (materialStr == null) return true;
+
+            // Try YueMiLibs items first
+            org.yuemi.libs.api.YueMiLibsApi api = org.yuemi.libs.api.YueMiLibsProvider.getApi();
+            if (api != null) {
+                String key = materialStr.contains(":") ? materialStr : "minecraft:" + materialStr.toLowerCase();
+                if (api.getItems().getItemCount(player, key) >= amount) {
+                    return api.getItems().takeItem(player, key, amount);
+                }
+                return false;
+            }
+
+            // Fallback to standard Bukkit inventory
             Material material = Material.matchMaterial(materialStr);
             if (material == null) return false;
 
