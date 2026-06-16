@@ -1,6 +1,11 @@
 {
   "projectId": "GmmDHTWr",
-  "loaders": ["paper"],
+  "loaders": [
+    "paper",
+    "bukkit",
+    "purpur",
+    "spigot"
+  ],
   "gameVersions": [
     "1.21",
     "1.21.1",
