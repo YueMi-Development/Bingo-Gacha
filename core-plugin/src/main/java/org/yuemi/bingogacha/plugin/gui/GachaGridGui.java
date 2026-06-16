@@ -3,7 +3,13 @@ package org.yuemi.bingogacha.plugin.gui;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Random;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.yuemi.bingogacha.plugin.BingoGachaPlugin;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -34,6 +40,8 @@ public class GachaGridGui implements BingoGuiHolder {
     private int rollButtonSlot;
     private int backButtonSlot;
     private int infoButtonSlot;
+    private boolean isAnimating = false;
+
 
     public GachaGridGui(
             @NotNull Player player,
@@ -162,6 +170,10 @@ public class GachaGridGui implements BingoGuiHolder {
     }
 
     public void render() {
+        render(null, -1);
+    }
+
+    public void render(Set<Integer> overrideUnlocked, int flickerSlot) {
         int totalSlots = template.getSize().getTotalSlots();
         
         Material activeMat = Material.matchMaterial(getDisplayMaterial("active-point", config.getActivePointMaterial()));
@@ -170,10 +182,28 @@ public class GachaGridGui implements BingoGuiHolder {
         Material inactiveMat = Material.matchMaterial(getDisplayMaterial("inactive-point", config.getInactivePointMaterial()));
         if (inactiveMat == null) inactiveMat = Material.RED_STAINED_GLASS_PANE;
 
+        Material animMat = Material.matchMaterial(config.getAnimationMaterial());
+        if (animMat == null) animMat = Material.BLUE_STAINED_GLASS_PANE;
+
+        Set<Integer> unlockedSet = overrideUnlocked != null ? overrideUnlocked : card.getUnlockedSlots();
+
         for (int i = 0; i < totalSlots; i++) {
             int invSlot = getSlotIndex(i);
 
-            if (card.isSlotUnlocked(i)) {
+            if (i == flickerSlot) {
+                // Render Flickering Slot (Animation)
+                ItemStack item = new ItemStack(animMat);
+                ItemMeta meta = item.getItemMeta();
+                if (meta != null) {
+                    meta.displayName(miniMessage.deserialize(config.getAnimationName()));
+                    int cmd = config.getAnimationCustomModelData();
+                    if (cmd > 0) {
+                        meta.setCustomModelData(cmd);
+                    }
+                    item.setItemMeta(meta);
+                }
+                inventory.setItem(invSlot, item);
+            } else if (unlockedSet.contains(i)) {
                 // Render Active Point
                 ItemStack item = new ItemStack(activeMat);
                 ItemMeta meta = item.getItemMeta();
@@ -282,6 +312,10 @@ public class GachaGridGui implements BingoGuiHolder {
 
     @Override
     public void handleClick(@NotNull InventoryClickEvent event) {
+        if (isAnimating) {
+            return;
+        }
+
         int clickedSlot = event.getSlot();
 
         if (clickedSlot == backButtonSlot) {
@@ -295,19 +329,103 @@ public class GachaGridGui implements BingoGuiHolder {
             }
 
             int result = service.rollCard(player, card, template);
-            if (result == 0) {
-                if (card.isCompleted()) {
-                    player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0f, 1.0f);
-                    player.sendMessage(miniMessage.deserialize("<green><bold>BINGO! <yellow>You have completed the card and claimed your rewards!"));
-                } else {
-                    player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
-                    player.sendMessage(miniMessage.deserialize("<green>Successfully rolled a slot!"));
+            if (result >= 0) {
+                // Setup pre-roll unlocked set (excluding the newly rolled index)
+                Set<Integer> oldUnlocked = new HashSet<>(card.getUnlockedSlots());
+                oldUnlocked.remove(result);
+
+                if (!config.isAnimationEnabled()) {
+                    if (card.isCompleted()) {
+                        player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0f, 1.0f);
+                        player.sendMessage(miniMessage.deserialize("<green><bold>BINGO! <yellow>You have completed the card and claimed your rewards!"));
+                    } else {
+                        player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
+                        player.sendMessage(miniMessage.deserialize("<green>Successfully rolled a slot!"));
+                    }
+                    render();
+                    return;
                 }
-                render();
-            } else if (result == 2) {
+
+                // Play animation
+                isAnimating = true;
+                JavaPlugin plugin = JavaPlugin.getPlugin(BingoGachaPlugin.class);
+                int ticks = config.getAnimationTicksPerFrame();
+                int totalFrames = config.getAnimationFrames();
+                Sound animSound = null;
+                try {
+                    String soundStr = config.getAnimationSound().toLowerCase(java.util.Locale.ROOT);
+                    org.bukkit.NamespacedKey key = org.bukkit.NamespacedKey.minecraft(soundStr);
+                    animSound = org.bukkit.Registry.SOUNDS.get(key);
+                    if (animSound == null) {
+                        for (Sound s : org.bukkit.Registry.SOUNDS) {
+                            org.bukkit.NamespacedKey soundKey = org.bukkit.Registry.SOUNDS.getKey(s);
+                            if (soundKey == null) continue;
+                            String keyPath = soundKey.getKey();
+                            String enumName = keyPath.replace(".", "_").toUpperCase(java.util.Locale.ROOT);
+                            if (enumName.equalsIgnoreCase(soundStr) || keyPath.equalsIgnoreCase(soundStr)) {
+                                animSound = s;
+                                break;
+                            }
+                        }
+                    }
+                } catch (Exception ignored) {}
+
+                final Sound finalAnimSound = animSound;
+
+                // Pick from locked slots to flicker
+                List<Integer> lockedSlots = new ArrayList<>();
+                int totalSlots = template.getSize().getTotalSlots();
+                for (int i = 0; i < totalSlots; i++) {
+                    if (!oldUnlocked.contains(i)) {
+                        lockedSlots.add(i);
+                    }
+                }
+
+                new org.bukkit.scheduler.BukkitRunnable() {
+                    int frame = 0;
+                    final Random random = new Random();
+
+                    @Override
+                    public void run() {
+                        if (!player.isOnline() || player.getOpenInventory().getTopInventory() != inventory) {
+                            isAnimating = false;
+                            cancel();
+                            return;
+                        }
+
+                        if (frame >= totalFrames) {
+                            isAnimating = false;
+                            render(); // Render final normal state
+                            if (card.isCompleted()) {
+                                player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0f, 1.0f);
+                                player.sendMessage(miniMessage.deserialize("<green><bold>BINGO! <yellow>You have completed the card and claimed your rewards!"));
+                            } else {
+                                player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
+                                player.sendMessage(miniMessage.deserialize("<green>Successfully rolled a slot!"));
+                            }
+                            cancel();
+                            return;
+                        }
+
+                        int flickerSlot = -1;
+                        if (!lockedSlots.isEmpty()) {
+                            flickerSlot = lockedSlots.get(random.nextInt(lockedSlots.size()));
+                        }
+
+                        render(oldUnlocked, flickerSlot);
+
+                        if (finalAnimSound != null) {
+                            player.playSound(player.getLocation(), finalAnimSound, 1.0f, 1.0f);
+                        }
+
+                        frame++;
+                    }
+                }.runTaskTimer(plugin, 0L, ticks);
+
+            } else if (result == -2) {
                 player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
                 player.sendMessage(miniMessage.deserialize("<red>You cannot afford the cost of this roll!"));
-            } else if (result == 4) {
+            } else if (result == -4) {
                 player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0f, 1.5f);
                 player.sendMessage(miniMessage.deserialize("<red>Please wait a moment before rolling again!"));
             } else {

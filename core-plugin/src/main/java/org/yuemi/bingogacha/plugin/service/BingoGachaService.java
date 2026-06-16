@@ -101,33 +101,35 @@ public class BingoGachaService {
      * @param card     the player's active card
      * @param template the template configuration of the card
      * @return roll result code:
-     *         0 = Success
-     *         1 = Card already completed
-     *         2 = Not enough money/items to roll
-     *         3 = No locked slots remaining (error state)
+     * @return roll result code:
+     *         slot index (>= 0) = Success
+     *         -1 = Card already completed
+     *         -2 = Not enough money/items to roll
+     *         -3 = No locked slots remaining (error state)
+     *         -4 = On cooldown
      */
     public int rollCard(@NotNull Player player, @NotNull PlayerCard card, @NotNull CardTemplate template) {
         if (card.isCompleted()) {
-            return 1;
+            return -1;
         }
 
         // Cooldown check
         long lastRoll = rollCooldowns.getOrDefault(player.getUniqueId(), 0L);
         long cooldownMs = config.getRollCooldownMs();
         if (System.currentTimeMillis() - lastRoll < cooldownMs) {
-            return 4; // Code 4 = On cooldown
+            return -4; // Code -4 = On cooldown
         }
 
         int totalSlotsCount = template.getSize().getTotalSlots();
         Set<Integer> unlocked = card.getUnlockedSlots();
         
         if (unlocked.size() >= totalSlotsCount) {
-            return 3;
+            return -3;
         }
 
         // Deduct roll cost
         if (!chargeCost(player, template)) {
-            return 2;
+            return -2;
         }
 
         // Record cooldown timestamp
@@ -162,7 +164,7 @@ public class BingoGachaService {
                 int unusedCount = totalSlotsCount - card.getUnlockedSlots().size();
                 for (int i = 0; i < unusedCount; i++) {
                     for (Reward r : template.getUnusedPointRewards()) {
-                        r.give(player);
+                         r.give(player);
                     }
                 }
             }
@@ -175,7 +177,7 @@ public class BingoGachaService {
 
         // Save progress
         repository.updatePlayerCard(card);
-        return 0; // Success
+        return rolledIndex; // Success
     }
 
     private boolean checkCompletion(@NotNull Set<Integer> unlocked, @NotNull CardTemplate template) {

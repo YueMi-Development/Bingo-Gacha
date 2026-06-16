@@ -13,7 +13,7 @@ import org.yuemi.bingogacha.api.reward.RewardManager;
 
 public class BingoConfig {
 
-    public static final int LATEST_CONFIG_VERSION = 2;
+    public static final int LATEST_CONFIG_VERSION = 3;
     public static final int LATEST_CARD_VERSION = 2;
 
     private final JavaPlugin plugin;
@@ -40,6 +40,15 @@ public class BingoConfig {
     private String fillMaterial = "GRAY_STAINED_GLASS_PANE";
     private String fillName = " ";
     private int fillCustomModelData = 0;
+
+    private boolean animationEnabled = true;
+    private String animationMaterial = "BLUE_STAINED_GLASS_PANE";
+    private String animationName = "<blue><bold>Rolling...";
+    private int animationCustomModelData = 0;
+    private String animationSound = "BLOCK_NOTE_BLOCK_HAT";
+    private int animationTicksPerFrame = 2;
+    private int animationFrames = 15;
+
 
     public BingoConfig(@NotNull JavaPlugin plugin, @NotNull RewardManager rewardManager) {
         this.plugin = plugin;
@@ -99,6 +108,14 @@ public class BingoConfig {
             fillMaterial = displaySec.getString("fill.material", "GRAY_STAINED_GLASS_PANE");
             fillName = displaySec.getString("fill.name", " ");
             fillCustomModelData = displaySec.getInt("fill.custom-model-data", 0);
+
+            animationEnabled = displaySec.getBoolean("animation.enabled", true);
+            animationMaterial = displaySec.getString("animation.material", "BLUE_STAINED_GLASS_PANE");
+            animationName = displaySec.getString("animation.name", "<blue><bold>Rolling...");
+            animationCustomModelData = displaySec.getInt("animation.custom-model-data", 0);
+            animationSound = displaySec.getString("animation.sound", "BLOCK_NOTE_BLOCK_HAT");
+            animationTicksPerFrame = displaySec.getInt("animation.ticks-per-frame", 2);
+            animationFrames = displaySec.getInt("animation.frames", 15);
         }
 
         // Load card templates from cards/ directory
@@ -281,6 +298,38 @@ public class BingoConfig {
     public long getRollCooldownMs() {
         return rollCooldownMs;
     }
+
+    public boolean isAnimationEnabled() {
+        return animationEnabled;
+    }
+
+    @NotNull
+    public String getAnimationMaterial() {
+        return animationMaterial;
+    }
+
+    @NotNull
+    public String getAnimationName() {
+        return animationName;
+    }
+
+    public int getAnimationCustomModelData() {
+        return animationCustomModelData;
+    }
+
+    @NotNull
+    public String getAnimationSound() {
+        return animationSound;
+    }
+
+    public int getAnimationTicksPerFrame() {
+        return animationTicksPerFrame;
+    }
+
+    public int getAnimationFrames() {
+        return animationFrames;
+    }
+
 
     private void migrateConfig(File file, YamlConfiguration config) {
         try (java.io.InputStream defStream = plugin.getResource("config.yml")) {

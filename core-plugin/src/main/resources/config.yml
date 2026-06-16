@@ -1,5 +1,5 @@
 # Bingo Gacha Main Configuration
-config-version: 2
+config-version: 3
 
 storage:
   type: sqlite # 'sqlite' or 'mysql'
@@ -39,3 +39,12 @@ display:
     material: GRAY_STAINED_GLASS_PANE
     name: " "
     custom-model-data: 0
+  animation:
+    enabled: true
+    material: BLUE_STAINED_GLASS_PANE
+    name: "<blue><bold>Rolling..."
+    custom-model-data: 0
+    sound: BLOCK_NOTE_BLOCK_HAT
+    ticks-per-frame: 2
+    frames: 15
+
