@@ -1,4 +1,4 @@
-name: BingoGacha
+name: '@pluginName@'
 version: '@version@'
 main: org.yuemi.bingogacha.plugin.BingoGachaPlugin
 api-version: '@apiVersion@'

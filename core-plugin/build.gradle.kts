@@ -60,6 +60,7 @@ tasks.build {
 
 tasks.processResources {
     val tokens = mapOf(
+        "pluginName" to pluginName,
         "version" to pluginVersion,
         "apiVersion" to apiVersion,
         "authors" to authors
