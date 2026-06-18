@@ -15,6 +15,10 @@ rewards:
     amount: 1000.0
   - type: command
     command: "give %player% gold_ingot 3"
+  # - type: custom-item
+  #   plugin: CraftEngine
+  #   id: "my_namespace:sword_of_light"
+  #   amount: 1
 unused-point-rewards:
   - type: economy
     amount: 50.0

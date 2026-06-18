@@ -16,6 +16,10 @@ rewards:
     amount: 5000.0
   - type: command
     command: "give %player% netherite_block 1"
+  # - type: custom-item
+  #   plugin: CraftEngine
+  #   id: "my_namespace:godly_shield"
+  #   amount: 1
 slots:
   0: { material: STONE, name: "<gray>Slot 0" }
   1: { material: COBBLESTONE, name: "<gray>Slot 1" }
